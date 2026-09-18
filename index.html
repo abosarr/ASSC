@@ -31,7 +31,12 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:#E8F1FB;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(0,133,63,0.10), transparent 45%),
+      radial-gradient(circle at 100% 12%, rgba(227,27,35,0.08), transparent 40%),
+      radial-gradient(circle at 50% 100%, rgba(253,239,66,0.14), transparent 45%),
+      var(--paper);
+    background-attachment:fixed;
     color:var(--ink);
     font-family:'Inter',sans-serif;
     min-height:100vh;
@@ -63,7 +68,7 @@
     font-weight:600;color:var(--ink);
   }
   .letterhead .lh-cellule{
-    font-weight:700;color:#1B3B6B;
+    font-weight:700;color:var(--sn-red);
   }
   .masthead{
     display:flex;align-items:center;justify-content:space-between;gap:16px;
@@ -137,6 +142,7 @@
     padding:7px 12px;margin-right:10px;border:none;border-radius:6px;
     background:var(--accent-soft);color:#1B3B6B;cursor:pointer;
   }
+  #cv-filename{color:var(--accent);font-weight:600;}
 
   .accord-group{display:flex;gap:10px;margin-top:8px;}
   .accord-opt{
@@ -401,6 +407,7 @@
     <div class="lh-line lh-republique">République du Sénégal</div>
     <div class="lh-line lh-parti">Parti Tabax Construire</div>
     <div class="lh-line lh-president">Président : BOUBACAR CAMARA KAMAH</div>
+    <div class="lh-line">Collectif des Cadres — Coc_Tabax Construire</div>
     <div class="lh-line lh-cellule">Comité coordonné par IBRAHIMA CAMARA — 77 621 21 15</div>
     <div class="lh-line">Siège social : Région de Dakar, Département de Pikine, Commune de Mbao — Gare Cité Holding 5, Villa 244</div>
   </div>
@@ -443,12 +450,6 @@
       <label for="carte-electeur">Numéro de carte d'électeur <span style="font-weight:400;color:#9AA1B0;">(optionnel)</span></label>
       <input type="text" id="carte-electeur" placeholder="Numéro de la carte d'électeur (facultatif)" />
 
-      <label for="commune-vote">Commune / Lieu de vote</label>
-      <input type="text" id="commune-vote" placeholder="Ex : Commune de Mbao" />
-
-      <label for="bureau-vote">Numéro de bureau de vote</label>
-      <input type="text" id="bureau-vote" placeholder="Ex : Bureau n°04" />
-
       <label for="quartier">Quartier / Adresse</label>
       <input type="text" id="quartier" placeholder="Ex : Quartier, ville" />
 
@@ -464,6 +465,9 @@
         </label>
       </div>
 
+      <label for="cv">Joindre un CV <span style="font-weight:400;color:#9AA1B0;">(optionnel)</span></label>
+      <input type="file" id="cv" accept=".pdf,.doc,.docx,image/*" />
+      <div class="hint" id="cv-filename"></div>
       <div class="hint">Formats acceptés : PDF, Word ou image — taille max conseillée : 5 Mo.</div>
 
       <label>Signature électronique</label>
@@ -490,7 +494,7 @@
     <div class="card confirm" id="confirm-card" style="display:none;">
       <div class="stamp">✓</div>
       <h2>Confirmation enregistrée</h2>
-      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:-4px 0 10px;">Parti Tabax Construire · Comité de IBRAHIMA CAMARA</p>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:-4px 0 10px;">Coc — Tabax Construire · Comité de IBRAHIMA CAMARA</p>
       <p>Votre réponse a bien été transmise au responsable du comité.</p>
       <div class="receipt" id="receipt"></div>
       <button class="btn-primary" id="new-entry-btn" style="background:var(--accent-soft);color:#1B3B6B;">Nouvelle confirmation</button>
@@ -518,7 +522,7 @@
         <div class="stat"><div class="n" id="stat-non" style="color:var(--red);">0</div><div class="l">Refus « Non »</div></div>
       </div>
       <div class="toolbar">
-        <input type="text" class="search" id="search-input" placeholder="Rechercher par nom, CNI, quartier, commune ou bureau de vote…" />
+        <input type="text" class="search" id="search-input" placeholder="Rechercher par nom, CNI ou quartier…" />
         <select class="search" id="filter-accord" style="max-width:150px;flex:none;">
           <option value="">Toutes les réponses</option>
           <option value="Oui">Oui uniquement</option>
@@ -531,6 +535,7 @@
         <button class="btn-export" id="print-all-btn" title="Génère une fiche imprimable pour chaque ligne affichée">Fiches à imprimer</button>
         <button class="btn-export" id="print-cards-btn" title="Génère une carte de membre imprimable pour chaque ligne affichée">Cartes de membre</button>
         <button class="btn-export" id="export-btn">Exporter CSV</button>
+        <button class="btn-export" id="download-cvs-btn" title="Télécharge le CV de chaque adhérent affiché qui en a joint un">Télécharger les CV</button>
         <button class="btn-export" id="refresh-btn" style="background:var(--card);color:var(--ink-soft);border-color:var(--hairline);">Actualiser</button>
       </div>
       <p class="refresh-note">Les signatures ne sont pas incluses dans l'export CSV ; cliquez une vignette pour l'agrandir. « Fiches à imprimer » génère une fiche par membre (respecte les filtres en cours).</p>
@@ -548,6 +553,7 @@
               <th>Téléphone</th>
               <th class="sortable" data-sort="accord">Adhésion</th>
               <th>Signature</th>
+              <th>CV</th>
               <th class="sortable" data-sort="date">Date</th>
               <th>Fiche</th>
             </tr>
@@ -684,6 +690,22 @@ document.getElementById('clear-sig').addEventListener('click', ()=>{
   hasSignature = false;
 });
 
+// ---------- CV UPLOAD ----------
+const cvInput = document.getElementById('cv');
+cvInput.addEventListener('change', ()=>{
+  const f = cvInput.files[0];
+  document.getElementById('cv-filename').textContent = f ? 'Fichier sélectionné : ' + f.name : '';
+});
+function fileToDataURL(file){
+  return new Promise((resolve, reject)=>{
+    if(!file){ resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve({name: file.name, type: file.type, data: reader.result});
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // ---------- CHECK DUPLICATE CNI ----------
 const cniInput = document.getElementById('cni');
 let dupCheckTimer;
@@ -717,13 +739,11 @@ document.getElementById('submit-btn').addEventListener('click', async ()=>{
   const quartier = document.getElementById('quartier').value.trim();
   const telephone = document.getElementById('tel').value.trim();
   const carteElecteur = document.getElementById('carte-electeur').value.trim();
-  const communeVote = document.getElementById('commune-vote').value.trim();
-  const bureauVote = document.getElementById('bureau-vote').value.trim();
   const accordEl = document.querySelector('input[name=accord]:checked');
   const errorEl = document.getElementById('error-msg');
   errorEl.style.display='none';
 
-  if(!nom || !cni || !quartier || !telephone || !communeVote || !bureauVote || !accordEl || !hasSignature){
+  if(!nom || !cni || !quartier || !telephone || !accordEl || !hasSignature){
     errorEl.textContent = 'Merci de remplir tous les champs et de signer avant de confirmer.';
     errorEl.style.display='block';
     return;
@@ -733,12 +753,15 @@ document.getElementById('submit-btn').addEventListener('click', async ()=>{
   btn.disabled = true; btn.textContent = 'Envoi en cours…';
 
   const position = await getPosition();
+  const cvFile = await fileToDataURL(cvInput.files[0]);
   const record = {
     nom, matricule: cni, section: quartier, telephone,
     carteElecteur,
-    communeVote, bureauVote,
     accord: accordEl.value,
     signature: canvas.toDataURL('image/png'),
+    cvNom: cvFile ? cvFile.name : '',
+    cvType: cvFile ? cvFile.type : '',
+    cv: cvFile ? cvFile.data : '',
     date: new Date().toISOString(),
     position
   };
@@ -758,8 +781,7 @@ document.getElementById('submit-btn').addEventListener('click', async ()=>{
       <div><span class="k">CNI</span><span class="v mono">${escapeHtml(cni)}</span></div>
       <div><span class="k">Quartier</span><span class="v">${escapeHtml(quartier)}</span></div>
       ${carteElecteur ? `<div><span class="k">Carte électeur</span><span class="v mono">${escapeHtml(carteElecteur)}</span></div>` : ''}
-      <div><span class="k">Commune / Lieu de vote</span><span class="v">${escapeHtml(communeVote)}</span></div>
-      <div><span class="k">Bureau de vote</span><span class="v">${escapeHtml(bureauVote)}</span></div>
+      ${cvFile ? `<div><span class="k">CV</span><span class="v">${escapeHtml(cvFile.name)}</span></div>` : ''}
       <div><span class="k">Adhésion</span><span class="v" style="color:${accordEl.value==='Oui'?'#3F6C51':'#A23E34'};">${accordEl.value}</span></div>
       <div><span class="k">Date</span><span class="v">${new Date().toLocaleString('fr-FR')}</span></div>
     `;
@@ -778,8 +800,8 @@ document.getElementById('new-entry-btn').addEventListener('click', ()=>{
   document.getElementById('quartier').value='';
   document.getElementById('tel').value='';
   document.getElementById('carte-electeur').value='';
-  document.getElementById('commune-vote').value='';
-  document.getElementById('bureau-vote').value='';
+  cvInput.value='';
+  document.getElementById('cv-filename').textContent='';
   document.querySelectorAll('.accord-opt').forEach(o=>o.classList.remove('checked'));
   document.querySelectorAll('input[name=accord]').forEach(i=>i.checked=false);
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -893,7 +915,7 @@ function applyFiltersAndRender(){
   let filtered = allRecords.filter(r=>{
     if(accordFilter && r.accord !== accordFilter) return false;
     if(sectionFilter && r.section !== sectionFilter) return false;
-    if(q && !(r.nom.toLowerCase().includes(q) || r.matricule.toLowerCase().includes(q) || r.section.toLowerCase().includes(q) || (r.communeVote||'').toLowerCase().includes(q) || (r.bureauVote||'').toLowerCase().includes(q))) return false;
+    if(q && !(r.nom.toLowerCase().includes(q) || r.matricule.toLowerCase().includes(q) || r.section.toLowerCase().includes(q))) return false;
     return true;
   });
 
@@ -972,6 +994,7 @@ function renderTable(records, offset){
       <td class="mono">${escapeHtml(r.telephone)}</td>
       <td><span class="pill ${r.accord==='Oui'?'oui':'non'}">${r.accord}</span></td>
       <td><img class="sig-thumb" src="${r.signature}" onclick="openLightbox('${r.signature.replace(/'/g,"")}')" /></td>
+      <td>${r.cv ? `<a href="${r.cv}" download="${escapeHtml(r.cvNom||'cv')}" target="_blank" rel="noopener" class="btn-row-print">Télécharger</a> <button class="btn-row-print" onclick="printCV(currentRecords[${idx}])">Imprimer</button>` : '—'}</td>
       <td class="mono">${d.toLocaleDateString('fr-FR')}</td>
       <td><button class="btn-row-print" onclick="printFiches([currentRecords[${idx}]])">Fiche</button> <button class="btn-row-print" onclick="printCartes([currentRecords[${idx}]])">Carte</button></td>
     </tr>`;
@@ -986,7 +1009,7 @@ function ficheHTML(r){
       <div class="fiche-head">
         <div>
           <div class="fiche-eyebrow">République du Sénégal — Parti Tabax Construire</div>
-          <div class="fiche-eyebrow" style="margin-top:2px;">Président : BOUBACAR CAMARA KAMAH</div>
+          <div class="fiche-eyebrow" style="margin-top:2px;">Président : BOUBACAR CAMARA KAMAH · Collectif des Cadres — Coc_Tabax Construire</div>
           <div class="fiche-title">Fiche individuelle — Comité coordonné par IBRAHIMA CAMARA</div>
         </div>
       </div>
@@ -996,15 +1019,13 @@ function ficheHTML(r){
         <tr><td class="k">Quartier / Adresse</td><td class="v">${escapeHtml(r.section)}</td></tr>
         <tr><td class="k">Téléphone</td><td class="v mono">${escapeHtml(r.telephone)}</td></tr>
         ${r.carteElecteur ? `<tr><td class="k">Carte électeur</td><td class="v mono">${escapeHtml(r.carteElecteur)}</td></tr>` : ''}
-        <tr><td class="k">Commune / Lieu de vote</td><td class="v">${escapeHtml(r.communeVote||'')}</td></tr>
-        <tr><td class="k">Bureau de vote</td><td class="v">${escapeHtml(r.bureauVote||'')}</td></tr>
         <tr><td class="k">Adhésion</td><td class="v" style="color:${r.accord==='Oui'?'#3F6C51':'#A23E34'};">${r.accord}${r.accord==='Oui' ? ' — Adhésion confirmée' : ' — Adhésion non confirmée'}</td></tr>
         <tr><td class="k">Date de confirmation</td><td class="v">${d.toLocaleDateString('fr-FR')} à ${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</td></tr>
         ${r.position ? `<tr><td class="k">Position (déclarative)</td><td class="v mono">${r.position.lat.toFixed(5)}, ${r.position.lng.toFixed(5)}</td></tr>` : ''}
       </table>
       <div class="fiche-sig-label">Signature électronique</div>
       <img class="fiche-sig-img" src="${r.signature}" />
-      <div class="fiche-foot">Document généré depuis la plate-forme digitale d'adhésion — Comité coordonné par IBRAHIMA CAMARA (77 621 21 15) — Parti Tabax Construire — Siège social : Région de Dakar, Département de Pikine, Commune de Mbao, Gare Cité Holding 5, Villa 244 — à conserver pour archivage.</div>
+      <div class="fiche-foot">Document généré depuis la plate-forme digitale d'adhésion — Comité coordonné par IBRAHIMA CAMARA (77 621 21 15) — Parti Tabax Construire, Collectif des Cadres — Coc_Tabax Construire — Siège social : Région de Dakar, Département de Pikine, Commune de Mbao, Gare Cité Holding 5, Villa 244 — à conserver pour archivage.</div>
     </div>
   `;
 }
@@ -1077,6 +1098,39 @@ function openPrintWindow(title, bodyHtml){
   }
 }
 
+// ---------- IMPRESSION DU CV ----------
+function printCV(record){
+  if(!record || !record.cv){ return; }
+  const win = window.open('', '_blank');
+  if(!win){
+    alert("Le navigateur a bloqué l'ouverture de la fenêtre d'impression. Autorisez les pop-ups pour ce site puis réessayez.");
+    return;
+  }
+  const isImage = (record.cvType||'').startsWith('image/');
+  const isPdf = (record.cvType||'') === 'application/pdf';
+  const title = 'CV — ' + record.nom;
+  let bodyHtml;
+  if(isImage){
+    bodyHtml = `<img src="${record.cv}" style="max-width:100%;display:block;margin:0 auto;" onload="window.focus();window.print();" />`;
+  }else if(isPdf){
+    bodyHtml = `<embed src="${record.cv}" type="application/pdf" style="width:100vw;height:100vh;border:none;" />`;
+  }else{
+    bodyHtml = `<div style="font-family:sans-serif;padding:40px;text-align:center;">
+      <p>Ce format de fichier ne peut pas être prévisualisé directement.</p>
+      <p><a href="${record.cv}" download="${(record.cvNom||'cv').replace(/"/g,'')}">Cliquez ici pour télécharger le CV</a>, puis imprimez-le depuis l'application correspondante.</p>
+    </div>`;
+  }
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>${title}</title>
+    <style>*{box-sizing:border-box;}body{margin:0;background:#fff;}@media print{@page{margin:0;}}</style>
+    </head><body>${bodyHtml}</body></html>`);
+  win.document.close();
+  if(isPdf){
+    // Laisse le temps au moteur PDF interne du navigateur de se charger avant d'imprimer.
+    setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 800);
+  }
+}
+
 function printFiches(records){
   if(!records || !records.length) return;
   const html = records.map(ficheHTML).join('');
@@ -1131,7 +1185,7 @@ document.getElementById('qr-print-btn').addEventListener('click', ()=>{
   const html = `
     <div class="fiche" style="text-align:center;padding:40px 30px;">
       <div class="fiche-eyebrow">République du Sénégal — Parti Tabax Construire</div>
-      <div class="fiche-eyebrow" style="margin-top:2px;">Président : BOUBACAR CAMARA KAMAH</div>
+      <div class="fiche-eyebrow" style="margin-top:2px;">Président : BOUBACAR CAMARA KAMAH · Collectif des Cadres — Coc_Tabax Construire</div>
       <h1 style="font-family:'Fraunces',serif;font-size:30px;margin:22px 0 6px;">Adhérez au Comité<br/>de IBRAHIMA CAMARA</h1>
       <p style="font-size:14px;color:var(--ink-soft);margin:0 0 24px;">Scannez ce QR code avec l'appareil photo de votre téléphone pour rejoindre le comité en ligne.</p>
       <img src="${qrImg}" alt="QR code d'adhésion" style="width:260px;height:260px;image-rendering:pixelated;" />
@@ -1170,14 +1224,12 @@ function carteMembreHTML(r){
           <div class="cm-v-row"><span class="k">Quartier</span><span class="v">${escapeHtml(r.section)}</span></div>
           <div class="cm-v-row"><span class="k">Téléphone</span><span class="v">${escapeHtml(r.telephone)}</span></div>
           ${r.carteElecteur ? `<div class="cm-v-row"><span class="k">Carte électeur</span><span class="v">${escapeHtml(r.carteElecteur)}</span></div>` : ''}
-          <div class="cm-v-row"><span class="k">Commune / Lieu de vote</span><span class="v">${escapeHtml(r.communeVote||'')}</span></div>
-          <div class="cm-v-row"><span class="k">Bureau de vote</span><span class="v">${escapeHtml(r.bureauVote||'')}</span></div>
           <div class="cm-v-row"><span class="k">Adhésion confirmée le</span><span class="v">${dateStr}</span></div>
         </div>
         <div>
           <div class="cm-sig-label">Signature du membre</div>
           <img class="cm-sig-img" src="${r.signature}" />
-          <div class="cm-v-foot" style="margin-top:2mm;"><span style="color:#1B3B6B;font-weight:700;">Comité coordonné par IBRAHIMA CAMARA — 77 621 21 15</span><br/>Siège social : Région de Dakar, Département de Pikine, Commune de Mbao — Gare Cité Holding 5, Villa 244</div>
+          <div class="cm-v-foot" style="margin-top:2mm;">Collectif des Cadres — Coc_Tabax Construire · Comité coordonné par IBRAHIMA CAMARA — 77 621 21 15<br/>Siège social : Région de Dakar, Département de Pikine, Commune de Mbao — Gare Cité Holding 5, Villa 244</div>
         </div>
       </div>
     </div>
@@ -1206,11 +1258,11 @@ document.getElementById('refresh-btn').addEventListener('click', loadSubmissions
 
 document.getElementById('export-btn').addEventListener('click', ()=>{
   if(currentRecords.length===0) return;
-  const headers = ['Nom','CNI','Quartier','Telephone','CarteElecteur','CommuneLieuDeVote','BureauDeVote','Adhesion','Date'];
+  const headers = ['Nom','CNI','Quartier','Telephone','CarteElecteur','Adhesion','CV','Date'];
   const rows = currentRecords.map(r=>{
     const d = new Date(r.date);
     const dateStr = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    return [r.nom, r.matricule, r.section, r.telephone, (r.carteElecteur||''), (r.communeVote||''), (r.bureauVote||''), r.accord, dateStr]
+    return [r.nom, r.matricule, r.section, r.telephone, (r.carteElecteur||''), r.accord, (r.cvNom||''), dateStr]
       .map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
   });
   const csv = headers.join(',') + '\n' + rows.join('\n');
@@ -1223,6 +1275,26 @@ document.getElementById('export-btn').addEventListener('click', ()=>{
   URL.revokeObjectURL(url);
 });
 
+// ---------- TÉLÉCHARGER TOUS LES CV ----------
+document.getElementById('download-cvs-btn').addEventListener('click', ()=>{
+  const withCv = currentRecords.filter(r => r.cv);
+  if(withCv.length === 0){
+    alert("Aucun CV n'a été joint parmi les adhérents actuellement affichés.");
+    return;
+  }
+  withCv.forEach((r, i)=>{
+    setTimeout(()=>{
+      const a = document.createElement('a');
+      a.href = r.cv;
+      a.download = r.cvNom || ('CV_' + r.nom);
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }, i * 400); // léger décalage pour éviter que le navigateur bloque les téléchargements groupés
+  });
+});
 </script>
 </body>
 </html>
